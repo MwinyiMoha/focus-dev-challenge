@@ -1,6 +1,7 @@
 package main
 
 import (
+	"focus-dev-challenge/internal/adapters/repository"
 	"focus-dev-challenge/internal/config"
 	"log"
 
@@ -25,5 +26,8 @@ func main() {
 		logger.Fatal("could not load config", zap.Error(err))
 	}
 
-	logger.Info("config loaded", zap.Any("config", cfg))
+	_, err = repository.NewRepository(cfg)
+	if err != nil {
+		logger.Fatal("could not initialize data repository", zap.Error(err))
+	}
 }
