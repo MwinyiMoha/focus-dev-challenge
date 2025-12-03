@@ -9,9 +9,17 @@ SELECT
     COUNT(*) OVER() AS total_count
 FROM campaigns c
 WHERE
-    (@status::text IS NULL OR c.status = @status)
-    AND (@channel::text IS NULL OR c.channel = @channel)
-ORDER BY id DESC
+    (
+        @status::text IS NULL 
+        OR @status::text = '' 
+        OR c.status = @status
+    )
+    AND (
+        @channel::text IS NULL 
+        OR @channel::text = '' 
+        OR c.channel = @channel
+    )
+ORDER BY c.id DESC
 LIMIT @page_size
 OFFSET ((@page_number - 1) * @page_size);
 

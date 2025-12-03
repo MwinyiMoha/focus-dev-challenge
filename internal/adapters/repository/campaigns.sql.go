@@ -97,9 +97,17 @@ SELECT
     COUNT(*) OVER() AS total_count
 FROM campaigns c
 WHERE
-    ($1::text IS NULL OR c.status = $1)
-    AND ($2::text IS NULL OR c.channel = $2)
-ORDER BY id DESC
+    (
+        $1::text IS NULL 
+        OR $1::text = '' 
+        OR c.status = $1
+    )
+    AND (
+        $2::text IS NULL 
+        OR $2::text = '' 
+        OR c.channel = $2
+    )
+ORDER BY c.id DESC
 LIMIT $4
 OFFSET (($3- 1) * $4)
 `
