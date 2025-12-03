@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/mwinyimoha/commons/pkg/errors"
 )
 
 type Repository struct {
@@ -36,6 +37,66 @@ func (r *Repository) Close() error {
 	defer cancel()
 
 	return r.db.Close(ctx)
+}
+
+func (r *Repository) AddCampaign(arg *CreateCampaignParams) (*Campaign, error) {
+	ctx, cancel := r.getContext()
+	defer cancel()
+
+	record, err := r.Queries.CreateCampaign(ctx, arg)
+	if err != nil {
+		return nil, errors.WrapError(err, errors.Internal, "SAVE_CAMPAIGN_ERROR")
+	}
+
+	return record, nil
+}
+
+func (r *Repository) ListCampaigns(arg *ListCampaignsParams) ([]*ListCampaignsRow, error) {
+	ctx, cancel := r.getContext()
+	defer cancel()
+
+	records, err := r.Queries.ListCampaigns(ctx, arg)
+	if err != nil {
+		return nil, errors.WrapError(err, errors.Internal, "FETCH_CAMPAIGNS_ERROR")
+	}
+
+	return records, nil
+}
+
+func (r *Repository) GetCampaign(ID int64) (*GetCampaignRow, error) {
+	ctx, cancel := r.getContext()
+	defer cancel()
+
+	record, err := r.Queries.GetCampaign(ctx, ID)
+	if err != nil {
+		return nil, errors.WrapError(err, errors.Internal, "FETCH_CAMPAIGN_ERROR")
+	}
+
+	return record, nil
+}
+
+func (r *Repository) GetCustomer(ID int64) (*Customer, error) {
+	ctx, cancel := r.getContext()
+	defer cancel()
+
+	record, err := r.Queries.GetCustomerById(ctx, ID)
+	if err != nil {
+		return nil, errors.WrapError(err, errors.Internal, "FETCH_CUSTOMER_ERROR")
+	}
+
+	return record, nil
+}
+
+func (r *Repository) CreateOutboundMessage(arg *CreateOutboundMessageParams) (*OutboundMessage, error) {
+	ctx, cancel := r.getContext()
+	defer cancel()
+
+	record, err := r.Queries.CreateOutboundMessage(ctx, arg)
+	if err != nil {
+		return nil, errors.WrapError(err, errors.Internal, "CREATE_OUTBOUND_MESSAGE_ERROR")
+	}
+
+	return record, nil
 }
 
 func (r *Repository) getContext() (context.Context, context.CancelFunc) {
