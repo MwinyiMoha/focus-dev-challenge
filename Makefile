@@ -22,4 +22,13 @@ db_rollback:
 sqlc:
 	sqlc generate
 
-.PHONY: dev run test migrations migrate db_tidy db_rollback sqlc
+build:
+	CGO_ENABLED=0 GOOS=linux go build -o ./build/app -ldflags="-s -w" ./cmd
+
+compress_binary:
+	upx --best --lzma ./build/app
+
+test_binary:
+	upx -t ./build/app
+
+.PHONY: dev run test migrations migrate db_tidy db_rollback sqlc build compress_binary test_binary

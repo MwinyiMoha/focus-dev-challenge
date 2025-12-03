@@ -1,0 +1,75 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: focus_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: challenge
+    ports:
+      - "15432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./schema/migrations/000001_initial_migration.up.sql:/docker-entrypoint-initdb.d/01_migrations.sql
+      - ./schema/scripts/seed_customers.sql:/docker-entrypoint-initdb.d/02_seed.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: focus_redis
+    ports:
+      - "16379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: focus_web
+    ports:
+      - "8080:8080"
+    environment:
+      SERVICE_NAME: "Dev Challenge"
+      DEBUG: false
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/challenge?sslmode=disable"
+      REDIS_HOST: "redis:6379"
+      REDIS_DB: 0
+      APP_TIER: "web"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: focus_worker
+    environment:
+      SERVICE_NAME: "Dev Challenge"
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/challenge?sslmode=disable"
+      REDIS_HOST: "redis:6379"
+      REDIS_DB: 0
+      APP_TIER: "worker"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
