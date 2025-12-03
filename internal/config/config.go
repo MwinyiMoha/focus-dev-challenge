@@ -13,8 +13,9 @@ type Config struct {
 	DefaultTimeout int    `mapstructure:"DEFAULT_TIMEOUT" validate:"required,gt=0"`
 	ServerPort     int    `mapstructure:"SERVER_PORT" validate:"required"`
 	DatabaseURL    string `mapstructure:"DATABASE_URL" validate:"required"`
-	RedisHost      string `mapstructure:"REDIS_HOST"`
+	RedisHost      string `mapstructure:"REDIS_HOST" validate:"required"`
 	RedisDB        int    `mapstructure:"REDIS_DB"`
+	DefaultQueue   string `mapstructure:"DEFAULT_QUEUE"`
 }
 
 func New(val *validator.Validate) (*Config, error) {
@@ -29,6 +30,7 @@ func New(val *validator.Validate) (*Config, error) {
 	v.SetDefault("DATABASE_URL", "")
 	v.SetDefault("REDIS_HOST", "")
 	v.SetDefault("REDIS_DB", 0)
+	v.SetDefault("DEFAULT_QUEUE", "tasks")
 
 	v.AutomaticEnv()
 
@@ -44,7 +46,6 @@ func New(val *validator.Validate) (*Config, error) {
 		return nil, errors.WrapError(err, errors.Internal, "failed to unmarshal config")
 	}
 
-	val.RegisterStructValidation(validateWorkerTier, Config{})
 	if err := cfg.validate(val); err != nil {
 		return nil, err
 	}
@@ -58,14 +59,4 @@ func (c *Config) validate(v *validator.Validate) error {
 	}
 
 	return nil
-}
-
-func validateWorkerTier(sl validator.StructLevel) {
-	cfg := sl.Current().Interface().(Config)
-
-	if cfg.AppTier == "worker" {
-		if cfg.RedisHost == "" {
-			sl.ReportError(cfg.RedisHost, "RedisHost", "RedisHost", "required_for_worker_tier", "")
-		}
-	}
 }
