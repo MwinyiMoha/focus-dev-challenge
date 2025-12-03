@@ -2,8 +2,10 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"focus-dev-challenge/internal/adapters/repository"
+	"focus-dev-challenge/internal/config"
 	"focus-dev-challenge/internal/core/domain"
 	"focus-dev-challenge/internal/core/ports"
 	"reflect"
@@ -12,6 +14,7 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mwinyimoha/commons/pkg/errors"
 	"golang.org/x/sync/errgroup"
@@ -19,15 +22,25 @@ import (
 
 type Service struct {
 	repository ports.AppRepository
+	broker     *asynq.Client
 	validator  *validator.Validate
+	queue      string
 }
 
-func NewService(r ports.AppRepository, v *validator.Validate) *Service {
+func NewService(cfg *config.Config, r ports.AppRepository, v *validator.Validate) *Service {
 	v.RegisterValidation("valid_timestamp", validTimestamp)
+
+	client := asynq.NewClient(&asynq.RedisClientOpt{
+		Addr:        cfg.RedisHost,
+		DB:          cfg.RedisDB,
+		DialTimeout: time.Duration(cfg.DefaultTimeout) * time.Second,
+	})
 
 	return &Service{
 		repository: r,
+		broker:     client,
 		validator:  v,
+		queue:      cfg.DefaultQueue,
 	}
 }
 
@@ -166,13 +179,33 @@ func (svc *Service) SendCampaign(campaignID int64, payload *domain.SendCampaign)
 				Status:          "pending",
 				RenderedContent: message,
 			}
-			_, err = svc.repository.CreateOutboundMessage(&arg)
+
+			err = svc.repository.ExecTx(context.Background(), func(q *repository.Queries) error {
+				msg, err := svc.repository.CreateOutboundMessage(&arg)
+				if err != nil {
+					return err
+				}
+
+				payload := map[string]any{
+					"message_id": msg.ID,
+				}
+				out, err := json.Marshal(payload)
+				if err != nil {
+					return err
+				}
+
+				task := asynq.NewTask(domain.SendMessageTask, out)
+				_, err = svc.broker.Enqueue(task, asynq.Queue(svc.queue))
+				if err != nil {
+					return err
+				}
+
+				return nil
+			})
+
 			if err != nil {
 				return err
 			}
-
-			// TODO
-			// Trigger Background Task
 
 			atomic.AddInt32(&queuedCount, 1)
 			return nil

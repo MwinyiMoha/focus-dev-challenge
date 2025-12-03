@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"focus-dev-challenge/internal/config"
 	"time"
 
@@ -37,6 +38,26 @@ func (r *Repository) Close() error {
 	defer cancel()
 
 	return r.db.Close(ctx)
+}
+
+func (r *Repository) ExecTx(ctx context.Context, fn func(*Queries) error) error {
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+
+	q := New(tx)
+
+	err = fn(q)
+	if err != nil {
+		if rbErr := tx.Rollback(ctx); rbErr != nil {
+			return fmt.Errorf("transaction err: %v, rollback err: %v", err, rbErr)
+		}
+
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
 func (r *Repository) AddCampaign(arg *CreateCampaignParams) (*Campaign, error) {
