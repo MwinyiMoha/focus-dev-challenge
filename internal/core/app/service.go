@@ -195,7 +195,11 @@ func (svc *Service) SendCampaign(campaignID int64, payload *domain.SendCampaign)
 				}
 
 				task := asynq.NewTask(domain.SendMessageTask, out)
-				_, err = svc.broker.Enqueue(task, asynq.Queue(svc.queue))
+				if campaign.ScheduledAt.Valid {
+					_, err = svc.broker.Enqueue(task, asynq.Queue(svc.queue), asynq.ProcessAt(campaign.ScheduledAt.Time))
+				} else {
+					_, err = svc.broker.Enqueue(task, asynq.Queue(svc.queue))
+				}
 				if err != nil {
 					return err
 				}
