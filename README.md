@@ -48,6 +48,7 @@ go test ./... -v
 - Seed scripts are used to initialize example customers and campaigns for local development and testing.
 - The delivery adapters for SMS/WhatsApp are not implemented; the worker currently logs send attempts (see "Mock sender behavior").
 - The service expects templates to reference struct field names directly (e.g., `{FirstName}`).
+- For custom errors, the project uses a custom reusable `errors` package that I developed for Go applications. See `Tools` section at the end of this document.
 
 ## Template Handling 
 
@@ -87,6 +88,7 @@ For high throughput applications, a broker with advanced routing guarantees is m
 
 ## Tools Used
 
-- **Golang Migrate:** For managing database schema changes
-- **SQLC:** For generating Go queries from SQL
-- **Generative AI:** Code autocompletion, performance tricks and writing tests
+- **[Golang Migrate](https://github.com/golang-migrate/migrate):** For managing database schema changes
+- **[SQLC](https://docs.sqlc.dev/en/latest/):** For generating Go queries from SQL
+- **Generative AI:** Local LLM for code autocompletion, performance tricks and writing tests
+- **[MwinyiMoha/Commons](https://github.com/MwinyiMoha/commons):** A suite of custom reusable packages that I developed
