@@ -18,7 +18,10 @@ func (tp *TaskProcessor) SendMessage(ctx context.Context, task *asynq.Task) erro
 
 	tp.logger.Info("sending message", zap.Int64("message_id", payload.MessageID))
 
-	// Message sending logic goes here
+	// TODO:
+	// - User worker.repository to fetch campaign & customer records
+	// - Send message to customer
+	// - Use worker.repository to update status
 
 	return nil
 }

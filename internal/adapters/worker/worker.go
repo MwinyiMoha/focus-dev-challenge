@@ -4,6 +4,7 @@ import (
 	"context"
 	"focus-dev-challenge/internal/config"
 	"focus-dev-challenge/internal/core/domain"
+	"focus-dev-challenge/internal/core/ports"
 	"time"
 
 	"github.com/hibiken/asynq"
@@ -11,11 +12,12 @@ import (
 )
 
 type TaskProcessor struct {
-	server *asynq.Server
-	logger *zap.Logger
+	server     *asynq.Server
+	logger     *zap.Logger
+	repository ports.AppRepository
 }
 
-func NewTaskProcessor(cfg *config.Config, logger *zap.Logger) *TaskProcessor {
+func NewTaskProcessor(cfg *config.Config, repo ports.AppRepository, logger *zap.Logger) *TaskProcessor {
 	server := asynq.NewServer(
 		&asynq.RedisClientOpt{
 			Addr:        cfg.RedisHost,
@@ -37,8 +39,9 @@ func NewTaskProcessor(cfg *config.Config, logger *zap.Logger) *TaskProcessor {
 		},
 	)
 	return &TaskProcessor{
-		server: server,
-		logger: logger,
+		server:     server,
+		logger:     logger,
+		repository: repo,
 	}
 }
 

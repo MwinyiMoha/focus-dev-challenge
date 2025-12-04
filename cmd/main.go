@@ -68,7 +68,7 @@ func main() {
 			}
 		}()
 	case "worker":
-		tasker = worker.NewTaskProcessor(cfg, logger)
+		tasker = worker.NewTaskProcessor(cfg, repo, logger)
 
 		go func() {
 			logger.Info("Starting background task processor")
