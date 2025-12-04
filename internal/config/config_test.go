@@ -42,6 +42,7 @@ func TestNew_Success(t *testing.T) {
 	DEFAULT_TIMEOUT=15
 	SERVER_PORT=9090
 	DATABASE_URL=postgres://user:pass@localhost/db
+	REDIS_HOST=localhost:6379
 	`
 
 	cfgPath := writeConfigFile(t, dir, "config.env", content)
